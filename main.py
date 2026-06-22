@@ -31,8 +31,7 @@ if not all([TELEGRAM_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS_JSON, SPREADSHEET
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-
+gemini_model = genai.GenerativeModel("gemini-2.0-flash")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 def get_sheet():
