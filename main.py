@@ -12,15 +12,22 @@ import google.generativeai as genai
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS_JSON")
-SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "")
 SHEET_NAME = os.environ.get("SHEET_NAME", "السجل اليومي")
 
-_missing = [n for n, v in {"TELEGRAM_TOKEN": TELEGRAM_TOKEN, "GEMINI_API_KEY": GEMINI_API_KEY, "GOOGLE_CREDENTIALS_JSON": GOOGLE_CREDENTIALS_JSON, "SPREADSHEET_ID": SPREADSHEET_ID}.items() if not v]
-if _missing:
-    raise EnvironmentError(f"متغيرات مفقودة: {', '.join(_missing)}")
+logger.info(f"TELEGRAM_TOKEN present: {bool(TELEGRAM_TOKEN)}")
+logger.info(f"GEMINI_API_KEY present: {bool(GEMINI_API_KEY)}")
+logger.info(f"GOOGLE_CREDENTIALS_JSON present: {bool(GOOGLE_CREDENTIALS_JSON)}")
+logger.info(f"SPREADSHEET_ID present: {bool(SPREADSHEET_ID)}")
+
+if not all([TELEGRAM_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS_JSON, SPREADSHEET_ID]):
+    missing = [k for k,v in {"TELEGRAM_TOKEN":TELEGRAM_TOKEN,"GEMINI_API_KEY":GEMINI_API_KEY,"GOOGLE_CREDENTIALS_JSON":GOOGLE_CREDENTIALS_JSON,"SPREADSHEET_ID":SPREADSHEET_ID}.items() if not v]
+    logger.error(f"متغيرات مفقودة: {missing}")
+    time.sleep(60)
+    raise EnvironmentError(f"متغيرات مفقودة: {', '.join(missing)}")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
 genai.configure(api_key=GEMINI_API_KEY)
@@ -56,7 +63,7 @@ def parse_gemini(text):
 
 @bot.message_handler(commands=["start","help"])
 def start(message):
-    bot.reply_to(message, "مرحباً! أرسل لي أي نص يصف حركات الموقع وسأضيفها للجدول تلقائياً.\n\nأمثلة:\n- استلام 50 كيس أسمنت\n- صرف 10 متر حديد\n- فاتورة نقل 500 ريال")
+    bot.reply_to(message, "مرحباً! أرسل لي أي نص يصف حركات الموقع وسأضيفها للجدول تلقائياً.")
 
 @bot.message_handler(commands=["status"])
 def status(message):
