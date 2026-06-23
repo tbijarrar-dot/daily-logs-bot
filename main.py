@@ -7,7 +7,7 @@ import time
 import telebot
 import gspread
 from google.oauth2.service_account import Credentials
-import google.generativeai as genai
+from groq import Groq
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -30,8 +30,7 @@ if not all([TELEGRAM_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS_JSON, SPREADSHEET
     raise EnvironmentError(f"متغيرات مفقودة: {', '.join(missing)}")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 def get_sheet():
@@ -53,8 +52,13 @@ SYSTEM_PROMPT = """أنت محرك استخراج بيانات. حوّل الن�
 
 def parse_gemini(text):
     prompt = f"{SYSTEM_PROMPT}\n\nالنص:\n{text}"
-    response = gemini_model.generate_content(prompt, generation_config=genai.types.GenerationConfig(temperature=0.1, max_output_tokens=2048))
-    raw = response.text.strip().replace("```python","").replace("```","").strip()
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1,
+        max_tokens=2048,
+    )
+    raw = response.choices[0].message.content.strip().replace("```python","").replace("```","").strip()
     parsed = ast.literal_eval(raw)
     if not isinstance(parsed, list):
         raise ValueError("المخرج ليس قائمة")
